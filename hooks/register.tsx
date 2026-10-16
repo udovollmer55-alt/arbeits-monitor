@@ -57,8 +57,14 @@ export const describe = (e: ToolCallInput): string => {
       case 'TaskCreate':
       case 'TaskUpdate':
         return 'Aktualisiert die Aufgabenliste'
-      default:
+      default: {
+        // Windows nutzt statt "Bash" das Werkzeug "PowerShell" mit denselben Feldern.
+        const args = e as unknown as { description?: unknown; command?: unknown }
+        const what = typeof args.description === 'string' ? args.description : args.command
+        if ((e.tool as string) === 'PowerShell' && typeof what === 'string')
+          return `Führt aus: ${short(what)}`
         return `Nutzt Werkzeug ${e.tool}`
+      }
     }
   })()
   return helper + text
@@ -183,10 +189,12 @@ export const register: Register = on => {
         <Text bold color={isRunning ? 'yellow' : 'green'}>
           {isRunning ? '● Arbeitet' : '✓ Fertig'} · {formatDuration(elapsed)}
         </Text>
-        <Text>
-          <Text bold>Gerade: </Text>
-          {current ? current.text : isRunning ? 'Denkt nach…' : '–'}
-        </Text>
+        {isRunning && (
+          <Text>
+            <Text bold>Gerade: </Text>
+            {current ? current.text : 'Denkt nach…'}
+          </Text>
+        )}
         {total > 0 && (
           <Text>
             <Text bold>Aufgaben: </Text>
@@ -194,7 +202,7 @@ export const register: Register = on => {
           </Text>
         )}
         <Text dimColor>Schritte bisher: {r.stepCount}</Text>
-        {earlier.length > 0 && <Text bold>Davor:</Text>}
+        {earlier.length > 0 && <Text bold>{isRunning ? 'Davor:' : 'Erledigt:'}</Text>}
         {earlier.map(s => (
           <Text key={s.id} dimColor>
             ✓ {s.text}

@@ -58,4 +58,26 @@ test('Panel zeigt Schritte und Aufgaben-Fortschritt', async ($, on) => {
     props: PANE,
   })
   expect(await ui.find({ text: /Fertig · 1:05 min/ })).toBeDefined()
+  expect(await ui.find({ text: /Gerade/ })).toBeUndefined()
+})
+
+test('PowerShell wird in Klartext beschrieben', async ($, on) => {
+  mock.clock(on, { now: 0 })
+  on('tool.call', () => ({ result: {} }) as never)
+  on('turn.start', (_$, e) => ({ turnId: e.turnId }))
+  await $.turn.start({ text: 'x', turnId: 't1' })
+  await $.tool.call({
+    tool: 'PowerShell',
+    tool_use_id: 'p',
+    command: 'Get-ChildItem',
+    description: 'Ordner auflisten',
+  } as never)
+  const ui = await $.ui.mount({
+    plugin: 'arbeits-monitor',
+    surface: 'desktop',
+    component: 'Pane',
+    requestId: 'arbeits-monitor',
+    props: PANE,
+  })
+  expect(await ui.find({ text: /Führt aus: Ordner auflisten/ })).toBeDefined()
 })
