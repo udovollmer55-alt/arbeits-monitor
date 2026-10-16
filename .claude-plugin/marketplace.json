@@ -1,0 +1,13 @@
+{
+  "name": "arbeits-monitor",
+  "description": "Live-Anzeige, was Claude gerade macht",
+  "owner": {
+    "name": "Chef"
+  },
+  "plugins": [
+    {
+      "name": "arbeits-monitor",
+      "source": "./"
+    }
+  ]
+}

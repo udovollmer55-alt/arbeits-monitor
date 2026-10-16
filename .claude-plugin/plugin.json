@@ -1,0 +1,7 @@
+{
+  "name": "arbeits-monitor",
+  "version": "0.1.0",
+  "description": "Zeigt live, was Claude gerade macht, wie lange es schon läuft und wie viele Aufgaben erledigt sind.",
+  "author": { "name": "Chef" },
+  "types": "./types/index.d.ts"
+}
