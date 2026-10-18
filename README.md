@@ -2,8 +2,8 @@
 
 Eine Mod für Claude Code, die live anzeigt, **was Claude gerade macht**:
 
-- **Seitenfenster** (`/monitor`): aktueller Schritt in Klartext, die letzten Schritte, bisherige Laufzeit und – wenn Claude eine Aufgabenliste führt – „x von y Aufgaben erledigt“.
-- **Statuszeile** unter dem Eingabefeld: Kurzfassung mit Laufzeit, solange Claude arbeitet.
+- **Ausführliche Ansicht** (`/monitor` oder Knopf „Details“): aktueller Schritt in Klartext, die letzten Schritte, bisherige Laufzeit und – wenn Claude eine Aufgabenliste führt – „x von y Aufgaben erledigt“.
+- **Band über dem Eingabefeld** (ab 0.3.0): kompakte Live-Anzeige, solange Claude arbeitet – Laufzeit, Schritte, Kosten, aktueller Schritt, Aufgaben und Helfer. Ohne eigenes Fenster; der Knopf „Details“ öffnet die ausführliche Ansicht. In Ruhe verschwindet das Band.
 - **Fertig-Meldung**: „Fertig nach 1:05 min · 12 Schritte“.
 - **Kopfzeile** mit Kosten (≈ $), Tokens und Zeit der Sitzung.
 - **Helfer-Übersicht**: Startet Claude Helfer (Subagents), bekommt jeder eine eigene Karte –

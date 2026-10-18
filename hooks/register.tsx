@@ -138,20 +138,6 @@ export const bar = (done: number, all: number, width = 16) => {
   return '█'.repeat(filled) + '░'.repeat(width - filled)
 }
 
-/** Die Kurzfassung für die Statuszeile unter dem Eingabefeld. */
-const statusLine = (r: Run, running: number, at: number) => {
-  if (r.startedAt === null || r.endedAt !== null) return undefined
-  const current = r.steps.findLast(s => !s.isDone) ?? r.steps.at(-1)
-  const { done, total } = taskProgress(r.tasks)
-  const parts = [
-    `⏱ ${formatDuration(at - r.startedAt)}`,
-    current ? current.text : 'Denkt nach…',
-    total > 0 ? `${done}/${total} Aufgaben` : undefined,
-    running > 0 ? `${running} Helfer aktiv` : undefined,
-  ]
-  return parts.filter(Boolean).join(' · ')
-}
-
 /** Holt Gesamtkosten und Fenstergröße von der App (falls sie sie meldet). */
 const refreshTotals = async ($: EngineInterface) => {
   // Meldet die App nichts, bleibt die Anzeige einfach beim letzten Stand.
@@ -168,8 +154,6 @@ const tick = async ($: EngineInterface) => {
   const at = await $.clock.now()
   await update($, now, () => at)
   await refreshTotals($)
-  const running = Object.values(await read($, helpers)).filter(hp => hp.status === 'running')
-  $.ui.status(statusLine(await read($, run), running.length, at))
 }
 
 const startTicker = ($: EngineInterface) => {
@@ -184,7 +168,6 @@ const stopTickerIfIdle = async ($: EngineInterface) => {
     ticker?.cancel()
     ticker = undefined
     await tick($)
-    $.ui.status(undefined)
   }
 }
 
@@ -198,7 +181,7 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'monitor',
-      description: 'Öffnet den Arbeits-Monitor (was Claude gerade macht)',
+      description: 'Öffnet die ausführliche Ansicht des Arbeits-Monitors',
     })
     return next(e)
   })
@@ -218,7 +201,6 @@ export const register: Register = on => {
     )
     await update($, now, () => at)
     startTicker($)
-    $.ui.status(statusLine(await read($, run), 0, at))
     return next(e)
   })
 
@@ -320,6 +302,55 @@ export const register: Register = on => {
       $.ui.toast(`${how} nach ${formatDuration(at - r.startedAt)} · ${r.stepCount} Schritte`)
     }
     return next(e)
+  })
+
+  // Das Band direkt über dem Eingabefeld: kompakt, nur solange gearbeitet wird.
+  // In Ruhe gibt es den Platz frei (z. B. für die Begrüßung anderer Mods).
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    if (e.props.hasSurvey || e.props.view.agentId !== undefined) return next(e)
+    const r = await read($, run)
+    const running = Object.values(await read($, helpers)).filter(hp => hp.status === 'running')
+    const isRunning = r.startedAt !== null && r.endedAt === null
+    if (!isRunning && running.length === 0) return next(e)
+
+    const { Box, Button, Text } = $.ui.resolve(e)
+    const at = await read($, now)
+    const t = await read($, totals)
+    const current = r.steps.findLast(s => !s.isDone) ?? r.steps.at(-1)
+    const { done, total: taskCount } = taskProgress(r.tasks)
+    const facts = [
+      r.startedAt === null ? undefined : `⏱ ${formatDuration(Math.max(at, r.startedAt) - r.startedAt)}`,
+      `${r.stepCount} Schritte`,
+      t.costUsd === null ? undefined : formatUsd(t.costUsd),
+    ]
+
+    return (
+      <Box flexDirection="column">
+        <Box flexDirection="row">
+          <Text bold color="claude">
+            {isRunning ? '● Claude arbeitet' : '● Helfer arbeiten'}
+          </Text>
+          <Text dimColor> · {facts.filter(Boolean).join(' · ')}  </Text>
+          <Button key="details" label="Details" onPress={() => $.ui.open({ id: PANE, title: TITLE })} />
+        </Box>
+        {isRunning && (
+          <Text>
+            <Text bold>Gerade: </Text>
+            {short(current && !current.isDone ? current.text : 'Denkt nach…', Math.max(20, e.props.bodyColumns - 10))}
+          </Text>
+        )}
+        {taskCount > 0 && (
+          <Text>
+            <Text color="yellow">{bar(done, taskCount, 12)}</Text> {done} von {taskCount} Aufgaben
+          </Text>
+        )}
+        {running.length > 0 && (
+          <Text dimColor>
+            🤖 {running.length} Helfer: {short(running.map(hp => hp.title).join(', '), Math.max(20, e.props.bodyColumns - 16))}
+          </Text>
+        )}
+      </Box>
+    )
   })
 
   // Das Seitenfenster selbst.

@@ -146,3 +146,36 @@ test('PowerShell wird in Klartext beschrieben', async ($, on) => {
   const ui = await mountPane($)
   expect(await ui.find({ text: /Führt aus: Ordner auflisten/ })).toBeDefined()
 })
+
+const BAND = {
+  hasSurvey: false,
+  isWorking: true,
+  maxRows: 12,
+  bodyColumns: 80,
+  scroll: { offset: 0, bodyRows: 11 },
+  view: {},
+} as const
+
+const mountBand = ($: any, surface: 'terminal' | 'desktop' = 'desktop') =>
+  $.ui.mount({ plugin: 'arbeits-monitor', surface, component: 'AbovePrompt', props: BAND })
+
+test('Band über dem Eingabefeld zeigt die Arbeit und verschwindet danach', async ($, on) => {
+  const clock = world(on)
+  // Was das Band zeigt, wenn der Monitor den Platz freigibt.
+  on('ui.render', ($$: any, e: any) => $$.ui.resolve(e).Text({}, ''))
+  await $.turn.start({ text: 'Bitte prüfen', turnId: 't1' })
+  await $.tool.call({ tool: 'Read', tool_use_id: 'a', file_path: '/x/jarvis.py' } as never)
+  await clock.advance(5000)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await mountBand($, surface)
+    expect(await ui.find({ text: /Claude arbeitet/ })).toBeDefined()
+    expect(await ui.find({ text: /1 Schritte/ })).toBeDefined()
+    expect(await ui.find({ key: 'details' })).toBeDefined()
+    await ui.unmount()
+  }
+
+  await $.turn.complete({ text: 'ok', turnId: 't1', reason: 'answer' } as never)
+  const ui = await mountBand($)
+  expect(await ui.find({ text: /Claude arbeitet/ })).toBeUndefined()
+})
