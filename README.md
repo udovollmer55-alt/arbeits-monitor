@@ -33,3 +33,18 @@ Danach `y` zum Hinzufügen des Marketplace, dann einen Bereich (z. B. *user*) w�
 ```
 claude plugin install arbeits-monitor --marketplace udovollmer55-alt/arbeits-monitor
 ```
+
+---
+
+# Zweiter Mod: Freundliche Oberfläche
+
+Im selben Marktplatz liegt der Mod **freundliche-oberflaeche** (Ordner `freundliche-oberflaeche/`):
+
+- **Begrüßung über dem Eingabefeld**, passend zur Tageszeit („☀️ Guten Morgen, Chef! Woran arbeiten wir heute?“), mit einem kleinen Tipp und Knopf „Ausblenden“. Während Claude arbeitet, macht sie dem Arbeits-Monitor Platz.
+- **Ladeanzeige auf Deutsch** mit Symbolen: „💭 Denke nach“, „🔧 Arbeite daran“, „✍️ Schreibe die Antwort“.
+- **Hinweiszeile auf Deutsch**: „✨ Schreib einfach, was du brauchst“, „↵ Enter zum Senden“.
+- Einstellung **Anrede** (Standard „Chef“).
+
+Installation: Marktplatz wie oben hinzufügen (falls noch nicht geschehen), dann **Add plugin** → *freundliche-oberflaeche*.
+
+Tests laufen pro Mod in seinem eigenen Ordner: `claude plugin test freundliche-oberflaeche`.

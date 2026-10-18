@@ -1,13 +1,19 @@
 {
   "name": "arbeits-monitor",
-  "description": "Live-Anzeige, was Claude gerade macht",
+  "description": "Mods von Chef für Claude Code",
   "owner": {
     "name": "Chef"
   },
   "plugins": [
     {
       "name": "arbeits-monitor",
-      "source": "./"
+      "source": "./",
+      "description": "Live-Anzeige, was Claude gerade macht"
+    },
+    {
+      "name": "freundliche-oberflaeche",
+      "source": "./freundliche-oberflaeche",
+      "description": "Freundlichere Oberfläche: Begrüßung, deutsche Ladewörter mit Symbolen, deutsche Hinweise"
     }
   ]
 }

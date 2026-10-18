@@ -1,0 +1,17 @@
+{
+  "name": "freundliche-oberflaeche",
+  "version": "0.1.0",
+  "description": "Macht Claude Code freundlicher: Begrüßung, deutsche Statuswörter mit Symbolen, ruhige Hinweise.",
+  "userConfig": {
+    "anrede": {
+      "type": "string",
+      "title": "Anrede",
+      "description": "Wie Claude dich in der Begrüßung nennt",
+      "default": "Chef"
+    }
+  },
+  "types": "./types/index.d.ts",
+  "author": {
+    "name": "Chef"
+  }
+}
