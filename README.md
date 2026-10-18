@@ -43,6 +43,7 @@ Im selben Marktplatz liegt der Mod **freundliche-oberflaeche** (Ordner `freundli
 - **Begrüßung über dem Eingabefeld**, passend zur Tageszeit („☀️ Guten Morgen, Chef! Woran arbeiten wir heute?“), mit einem kleinen Tipp und Knopf „Ausblenden“. Während Claude arbeitet, macht sie dem Arbeits-Monitor Platz.
 - **Ladeanzeige auf Deutsch** mit Symbolen: „💭 Denke nach“, „🔧 Arbeite daran“, „✍️ Schreibe die Antwort“.
 - **Hinweiszeile auf Deutsch**: „✨ Schreib einfach, was du brauchst“, „↵ Enter zum Senden“.
+- **Arbeitsschritte als Karten** (ab 0.2.0): Claudes Werkzeug-Zeilen erscheinen als abgerundete Karten mit Symbol, deutschem Klartext und Zustand, z. B. „📄 Liest jarvis.py ✓“. Mehrere Lese- und Suchschritte werden zu einer Karte zusammengefasst.
 - Einstellung **Anrede** (Standard „Chef“).
 
 Installation: Marktplatz wie oben hinzufügen (falls noch nicht geschehen), dann **Add plugin** → *freundliche-oberflaeche*.

@@ -1,7 +1,7 @@
 {
   "name": "freundliche-oberflaeche",
-  "version": "0.1.0",
-  "description": "Macht Claude Code freundlicher: Begrüßung, deutsche Statuswörter mit Symbolen, ruhige Hinweise.",
+  "version": "0.2.0",
+  "description": "Macht Claude Code freundlicher: Begrüßung, deutsche Statuswörter mit Symbolen, ruhige Hinweise, Arbeitsschritte als Karten.",
   "userConfig": {
     "anrede": {
       "type": "string",

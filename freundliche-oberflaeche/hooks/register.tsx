@@ -1,6 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
+import { beschreibe, zusammenfassung, zustand } from './werkzeuge'
+
 // Merkt sich pro Sitzung, ob die Begrüßung weggeklickt wurde.
 const istAusgeblendet = atom({ plugin: 'freundliche-oberflaeche', key: 'istAusgeblendet' } as const, false)
 
@@ -74,4 +76,31 @@ export const register: Register = (on, options) => {
         : '✨ Schreib einfach, was du brauchst'
     return next({ ...e, props: { ...e.props, hint } })
   })
+
+  // 4) Claudes Arbeitsschritte als freundliche Karten mit Symbol und Klartext.
+  //    Das Ergebnis darunter (z. B. Befehlsausgabe) zeichnet die App weiter selbst.
+  on('ui.render', { component: 'ToolUse' }, ($, e) => {
+    const { symbol, text } = beschreibe(e.props.tool, e.props.input)
+    const { zeichen, farbe } = zustand(e.props)
+    const { Box, Text } = $.ui.resolve(e)
+    return (
+      <Box borderStyle="round" borderColor={farbe === 'success' ? 'subtle' : farbe} paddingX={1} flexDirection="row">
+        <Text>{symbol} {text}  </Text>
+        <Text color={farbe}>{zeichen}</Text>
+      </Box>
+    )
+  }).catch(($, e, next) => next(e))
+
+  // 5) Zusammengefasste Schritte (mehrere Lese- oder Suchvorgänge) als eine Karte.
+  on('ui.render', { component: 'ToolGroup' }, ($, e, next) => {
+    if (e.props.isExpanded) return next(e)
+    const { Box, Text } = $.ui.resolve(e)
+    const laeuft = e.props.calls.some(c => c.isRunning)
+    return (
+      <Box borderStyle="round" borderColor={laeuft ? 'claude' : 'subtle'} paddingX={1} flexDirection="row">
+        <Text>🔎 {zusammenfassung(e.props.calls)}  </Text>
+        <Text color={laeuft ? 'claude' : 'success'}>{laeuft ? '… läuft' : '✓'}</Text>
+      </Box>
+    )
+  }).catch(($, e, next) => next(e))
 }
