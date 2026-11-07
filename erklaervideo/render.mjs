@@ -5,6 +5,9 @@
 //   Einzelbild ansehen:   node render.mjs still 45.5 bild.png
 //   Ganzes Video bauen:   node render.mjs video ausgabe.mp4 [--fps 30] [--workers 4]
 //   Nur ein Ausschnitt:   node render.mjs video test.mp4 --from 30 --to 40
+//   Mit Stimmen:          node render.mjs video ausgabe.mp4 --voices <ordner mit stimmen.json>
+//                         (Ordner kommt von stimmen.py)
+//   Nur den Ton bauen:    node render.mjs audio ton.m4a --voices <ordner>
 //
 // Ablauf: Jede Sekunde T wird im Browser mit renderAt(T) gezeichnet,
 // als Bild aufgenommen und an ffmpeg übergeben. Mehrere "Worker" rendern
@@ -59,6 +62,15 @@ try {
     await page.screenshot({ path: out });
     await browser.close();
     console.log('Einzelbild gespeichert:', out);
+  } else if (mode === 'audio') {
+    const { browser, page } = await openPage();
+    const duration = await page.evaluate(() => window.DURATION);
+    const cues = await page.evaluate(() => window.CUES);
+    await browser.close();
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'erklaervideo-ton-'));
+    buildAudio(args[1] || 'ton.m4a', cues, duration, 0, duration, tmp, flag('voices'));
+    fs.rmSync(tmp, { recursive: true, force: true });
+    console.log('Ton gespeichert:', args[1]);
   } else if (mode === 'video') {
     await renderVideo(args[1] || 'erklaervideo.mp4');
   } else {
@@ -119,7 +131,7 @@ async function renderVideo(outFile) {
 
   // Ton erzeugen und darunterlegen
   const audio = path.join(tmp, 'ton.m4a');
-  buildAudio(audio, cues, duration, from, to, tmp);
+  buildAudio(audio, cues, duration, from, to, tmp, flag('voices'));
   run('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', audio, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest',
     '-movflags', '+faststart', outFile]);
   console.log('Fertig:', outFile, `(${((Date.now() - t0) / 1000).toFixed(0)} s)`);
@@ -132,7 +144,7 @@ function run(cmd, a) {
 }
 
 /** Einfacher Ton aus ffmpeg-Generatoren: sanfter Klangteppich, PLING, Wusch, Absturz, Stempel. */
-function buildAudio(outFile, cues, duration, from, to, tmp) {
+function buildAudio(outFile, cues, duration, from, to, tmp, voicesDir) {
   const len = to - from;
   const inputs = [], chains = [], labels = [];
   const add = (src, delay, vol = 1, name) => {
@@ -143,14 +155,25 @@ function buildAudio(outFile, cues, duration, from, to, tmp) {
     labels.push(`[a${i}]`);
   };
   // Klangteppich (leise, ruhig)
-  add(`aevalsrc='0.05*(sin(2*PI*110*t)+0.8*sin(2*PI*164.8*t)+0.6*sin(2*PI*220*t)+0.4*sin(2*PI*277.2*t))*(0.8+0.2*sin(2*PI*0.1*t))':d=${len}:s=44100,afade=t=in:d=2,afade=t=out:st=${Math.max(0, len - 3)}:d=3,lowpass=f=900`, from, 1);
+  add(`aevalsrc='0.05*(sin(2*PI*110*t)+0.8*sin(2*PI*164.8*t)+0.6*sin(2*PI*220*t)+0.4*sin(2*PI*277.2*t))*(0.8+0.2*sin(2*PI*0.1*t))':d=${len}:s=44100,afade=t=in:d=2,afade=t=out:st=${Math.max(0, len - 3)}:d=3,lowpass=f=900`, from, voicesDir ? 0.55 : 1);
   const inRange = (t) => t >= from - 0.01 && t < to;
-  cues.pling.filter(inRange).forEach((t) => add(`aevalsrc='0.32*sin(2*PI*1568*t)*exp(-6*t)+0.2*sin(2*PI*2349*t)*exp(-8*t)+0.1*sin(2*PI*3136*t)*exp(-12*t)':d=0.8:s=44100`, t, 1));
+  // Gesprochene Stimmen (von stimmen.py): jede Zeile startet kurz nach dem Einblenden des Untertitels
+  if (voicesDir) {
+    const list = JSON.parse(fs.readFileSync(path.join(voicesDir, 'stimmen.json'), 'utf8'));
+    list.filter((v) => inRange(v.start)).forEach((v) => {
+      const i = inputs.length;
+      inputs.push(['-i', path.join(voicesDir, v.datei)]);
+      const ms = Math.max(0, Math.round((v.start + 0.12 - from) * 1000));
+      chains.push(`[${i}:a]volume=1.0,adelay=${ms}|${ms}[a${i}]`);
+      labels.push(`[a${i}]`);
+    });
+  }
+  cues.pling.filter(inRange).forEach((t) => add(`aevalsrc='0.32*sin(2*PI*1568*t)*exp(-6*t)+0.2*sin(2*PI*2349*t)*exp(-8*t)+0.1*sin(2*PI*3136*t)*exp(-12*t)':d=0.8:s=44100`, t, voicesDir ? 0.6 : 1));
   cues.whoosh.filter(inRange).forEach((t) => add(`anoisesrc=d=0.9:c=pink:a=0.6:r=44100,highpass=f=300,lowpass=f=2600,afade=t=in:d=0.4,afade=t=out:st=0.4:d=0.5`, Math.max(from, t - 0.25), 0.55));
   cues.crash.filter(inRange).forEach((t) => add(`aevalsrc='0.55*sin(2*PI*(110-60*t)*t)*exp(-3.5*t)+0.35*(2*random(0)-1)*exp(-7*t)':d=1.2:s=44100`, t, 1));
   cues.thud.filter(inRange).forEach((t) => add(`aevalsrc='0.8*sin(2*PI*62*t)*exp(-9*t)+0.2*(2*random(0)-1)*exp(-30*t)':d=0.6:s=44100`, t, 1));
   const script = path.join(tmp, 'ton.txt');
-  fs.writeFileSync(script, chains.join(';\n') + `;\n${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,alimiter=limit=0.9,atrim=0:${len}[out]`);
+  fs.writeFileSync(script, chains.join(';\n') + `;\n${labels.join('')}amix=inputs=${labels.length}:normalize=0:dropout_transition=0,alimiter=limit=0.8,atrim=0:${len}[out]`);
   const argv = ['-y', '-loglevel', 'error', ...inputs.flat(), '-filter_complex_script', script, '-map', '[out]', '-ar', '44100', '-c:a', 'aac', '-b:a', '192k', outFile];
   run('ffmpeg', argv);
 }

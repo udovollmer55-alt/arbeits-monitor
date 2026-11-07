@@ -1,6 +1,6 @@
 # Erklärvideo: Robobert & Sepp – So läuft die Automation
 
-3D-Motion-Graphics-Video für Oliver. Hochformat 9:16 (1080 × 1920), ca. 1:53 Minuten, 30 Bilder pro Sekunde.
+3D-Motion-Graphics-Video für Oliver. Hochformat 9:16 (1080 × 1920), 1:53 Minuten, 30 Bilder pro Sekunde.
 Mit dabei: Robobert, Sepp und Papa Udo als gezeichnete 3D-Figuren (kein Foto).
 
 ## Dateien
@@ -10,7 +10,8 @@ Mit dabei: Robobert, Sepp und Papa Udo als gezeichnete 3D-Figuren (kein Foto).
 | `robobert-sepp-erklaervideo.mp4` | das fertige Video |
 | `sprechertext.md` | alle Texte mit Zeitangaben, falls eine Stimme dazukommen soll |
 | `index.html` + `main.js` + `chars.js` | die 3D-Szene (Quelltext des Videos) |
-| `render.mjs` | baut aus der Szene die MP4-Datei |
+| `render.mjs` | baut aus der Szene die MP4-Datei (Bild und Ton) |
+| `stimmen.py` | erzeugt die gesprochenen Stimmen (offline, deutsche Piper-Stimmen) |
 | `lib/three.module.js` | 3D-Bibliothek Three.js (lokal abgelegt, braucht kein Internet) |
 
 ## Vorschau im Browser (ohne Rendern)
@@ -36,6 +37,23 @@ node render.mjs video test.mp4 --from 40 --to 46 # nur ein Ausschnitt
 
 Das Rendern dauert etwa 15–20 Minuten (4 Prozessorkerne).
 
+## Stimmen (Sprachausgabe)
+
+Die drei Figuren sprechen mit synthetischen deutschen Stimmen (Piper über `sherpa-onnx`, läuft offline):
+Papa Udo = ruhige Männerstimme, Robobert = Roboterstimme mit Effekt, Sepp = tiefer, blecherner Toaster.
+Einen bayerischen Dialekt kann die Sprachausgabe nicht – Sepp „spricht“ deshalb nur die bayerisch geschriebenen Wörter hochdeutsch aus.
+
+```
+pip install "sherpa-onnx==1.12.30" numpy
+# Stimmen von https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models laden und entpacken:
+#   vits-piper-de_DE-thorsten-medium, -karlsson-low, -pavoque-low  (je in einen Ordner gleichen Namens ohne Präfix)
+python3 stimmen.py <modell-ordner> <stimmen-ordner>
+node render.mjs video robobert-sepp-erklaervideo.mp4 --voices <stimmen-ordner>
+```
+
+Ein fertiges Video lässt sich auch nur neu vertonen: `node render.mjs audio ton.m4a --voices <stimmen-ordner>`, danach
+`ffmpeg -i video.mp4 -i ton.m4a -map 0:v -map 1:a -c copy neu.mp4`. (Version 2.x von sherpa-onnx liest die Piper-Stimmen derzeit nicht, daher die feste Version.)
+
 ## Wo ändere ich was?
 
 - **Texte der Sprechblasen und ihre Zeiten:** `CAPTIONS` in `main.js`.
@@ -52,4 +70,5 @@ Das Rendern dauert etwa 15–20 Minuten (4 Prozessorkerne).
 - Im Video kommen **keine Produktpreise** vor. Die Herstellkosten pro Video (Richtwerte aus dem Skill) sind interne Zahlen.
 - Das Video ist eine **private Erklärung** für Oliver und kein Werbevideo. Für eine Veröffentlichung gelten die üblichen Regeln
   (Werbung kennzeichnen, KI-Kennzeichnung).
-- Ton: nur Klangteppich und Soundeffekte, **keine gesprochene Stimme**. Die Texte stehen als Untertitel im Bild.
+- Ton: Klangteppich, Soundeffekte und **synthetische Stimmen**. Die Texte stehen zusätzlich als Untertitel im Bild.
+  Bei einer Veröffentlichung gilt die übliche KI-Kennzeichnung (KI-Stimmen und KI-Bilder).
