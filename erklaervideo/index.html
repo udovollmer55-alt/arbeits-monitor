@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robobert & Sepp – So läuft die Automation</title>
+<style>
+  /* Farben: bewusst nur Blau / Gelb / Grau (Rot-Grün-sicher, wie in der Ampel der Automation) */
+  :root {
+    --bg1: #07102a; --bg2: #12234f;
+    --blau: #2f7bff; --blau-dunkel: #0050c8;
+    --gelb: #ffc800; --grau: #8a94a6; --grau-dunkel: #404040;
+    --text: #f2f6ff; --leise: #9fb0d4;
+    --robobert: #ee8a3c; --sepp: #9cc2ff; --udo: #ffc800;
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #stage {
+    position: absolute; left: 0; top: 0; width: 1080px; height: 1920px;
+    transform-origin: 0 0; overflow: hidden;
+    font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: var(--text);
+    background:
+      radial-gradient(900px 700px at 80% 12%, rgba(47,123,255,.28), transparent 70%),
+      radial-gradient(800px 700px at 8% 70%, rgba(255,200,0,.10), transparent 70%),
+      linear-gradient(180deg, var(--bg2), var(--bg1) 70%);
+  }
+  /* feines Raster als „Boden“ für Tiefe */
+  #grid {
+    position: absolute; left: -200px; right: -200px; bottom: 0; height: 700px;
+    background-image:
+      linear-gradient(rgba(120,160,255,.14) 2px, transparent 2px),
+      linear-gradient(90deg, rgba(120,160,255,.14) 2px, transparent 2px);
+    background-size: 90px 90px;
+    transform: perspective(600px) rotateX(62deg); transform-origin: 50% 100%;
+    mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+    -webkit-mask-image: linear-gradient(to top, #000 10%, transparent 90%);
+  }
+  canvas#gl { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+  #ui { position: absolute; inset: 0; }
+  .scene { position: absolute; inset: 0; }
+  .el { position: absolute; }
+
+  /* ----- Kopfzeile ----- */
+  .hud { position: absolute; left: 60px; right: 60px; top: 46px; }
+  .brand { display: flex; justify-content: space-between; font-weight: 800; letter-spacing: .22em; font-size: 22px; color: var(--leise); }
+  .brand b { color: var(--gelb); }
+  .steps { display: flex; gap: 10px; margin-top: 22px; }
+  .stepcell { flex: 1; }
+  .stepbar { height: 9px; border-radius: 6px; background: rgba(255,255,255,.14); overflow: hidden; }
+  .stepbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--blau), #7db0ff); border-radius: 6px; }
+  .steplabel { margin-top: 10px; font-size: 21px; font-weight: 700; color: rgba(255,255,255,.4); text-align: center; white-space: nowrap; }
+  .stepcell.aktiv .steplabel { color: #fff; }
+
+  /* ----- Überschrift ----- */
+  .head { position: absolute; left: 60px; right: 60px; top: 205px; }
+  .chip { display: inline-block; padding: 9px 22px; border-radius: 40px; font-size: 25px; font-weight: 800; letter-spacing: .08em; }
+  .chip.blau { background: var(--blau-dunkel); color: #fff; }
+  .chip.gelb { background: var(--gelb); color: #111; }
+  .chip.grau { background: #2b3550; color: #cdd8f3; }
+  .head h1 { margin: 16px 0 0; font-size: 80px; line-height: 1.02; font-weight: 900; letter-spacing: -.02em;
+    text-shadow: 0 2px 0 #1b3a80, 0 4px 0 #17306a, 0 6px 0 #122655, 0 12px 28px rgba(0,0,0,.45); }
+  .head p { margin: 12px 0 0; font-size: 33px; font-weight: 600; color: var(--leise); line-height: 1.25; }
+
+  /* ----- Karten & Hilfsstile ----- */
+  .card { background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+    border: 2px solid rgba(255,255,255,.14); border-radius: 26px; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+  .badge { display: inline-block; padding: 6px 18px; border-radius: 14px; font-weight: 900; font-size: 27px; white-space: nowrap; }
+  .b-gut { background: var(--blau-dunkel); color: #fff; }
+  .b-pruef { background: var(--gelb); color: #111; }
+  .b-nein { background: var(--grau-dunkel); color: #fff; }
+  .small { font-size: 24px; color: var(--leise); font-weight: 600; }
+  .mono { font-family: "DejaVu Sans Mono", monospace; }
+
+  /* ----- Untertitel / Sprechblase ----- */
+  #cap { position: absolute; left: 50px; right: 50px; top: 1718px; height: 170px; }
+  .capbox { position: absolute; inset: 0; border-radius: 30px; padding: 22px 30px 18px;
+    background: rgba(8,14,36,.82); border: 3px solid rgba(255,255,255,.18); box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+  .who { display: inline-block; font-size: 23px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; padding: 3px 14px; border-radius: 10px; margin-bottom: 8px; color: #101522; }
+  .capbox .txt { font-size: 38px; font-weight: 700; line-height: 1.2; }
+
+  /* Effekte */
+  .pling { position: absolute; font-weight: 900; font-size: 54px; color: var(--gelb); text-shadow: 0 3px 0 #7a5f00, 0 0 18px rgba(255,200,0,.6); }
+  .boom { position: absolute; font-weight: 900; font-size: 120px; color: #fff; letter-spacing: .02em;
+    text-shadow: 0 6px 0 #404040, 0 0 30px rgba(255,200,0,.9); transform-origin: center; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="grid"></div>
+  <canvas id="gl" width="1080" height="1920"></canvas>
+  <div id="ui"></div>
+  <div class="hud">
+    <div class="brand"><span><b>ROBOBERT</b> &amp; SEPP</span><span>AUTOMATION</span></div>
+    <div class="steps" id="steps"></div>
+  </div>
+  <div id="cap"></div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
