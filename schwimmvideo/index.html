@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hendrik schwimmt – Sportabzeichen</title>
+<style>
+  /* Farben: Blau / Gelb / Weiß (Rot-Grün-sicher) */
+  :root {
+    --blau: #1d6fe0; --blau-dunkel: #0b3f9e; --gelb: #ffc800; --text: #ffffff;
+    --bade: #ffc800; --hendrik: #8fd0ff; --niklas: #ffb23f;
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #stage { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; transform-origin: 0 0; overflow: hidden;
+    font-family: Inter, "Helvetica Neue", Arial, sans-serif; color: var(--text); background: #dff1fb; }
+  canvas#gl { position: absolute; inset: 0; width: 1080px; height: 1920px; }
+  #ui { position: absolute; inset: 0; }
+  .scene { position: absolute; inset: 0; }
+  .el { position: absolute; }
+
+  /* Karten */
+  .card { background: rgba(9,32,84,.84); border: 3px solid rgba(255,255,255,.35); border-radius: 30px;
+    box-shadow: 0 16px 40px rgba(0,30,80,.35); }
+  .chip { display: inline-block; padding: 8px 22px; border-radius: 40px; font-size: 26px; font-weight: 900; letter-spacing: .08em; }
+  .chip.gelb { background: var(--gelb); color: #111; }
+  .chip.blau { background: var(--blau); color: #fff; }
+  .big { font-weight: 900; letter-spacing: -.02em; }
+  .shadow3d { text-shadow: 0 3px 0 #0b3f9e, 0 6px 0 #0a347f, 0 9px 0 #082a66, 0 18px 30px rgba(0,0,0,.35); }
+
+  /* Anzeigetafel oben während der Aufgaben */
+  .hud { position: absolute; left: 40px; right: 40px; top: 40px; height: 200px; box-sizing: border-box; padding: 22px 30px; }
+  .hud .row { display: flex; align-items: center; justify-content: space-between; }
+  .hud .titel { font-size: 40px; font-weight: 900; margin-top: 6px; }
+  .hud .meter { font-size: 88px; font-weight: 900; line-height: 1; color: var(--gelb); text-shadow: 0 4px 0 #7a5f00; }
+  .hud .meter small { font-size: 34px; color: #fff; text-shadow: none; }
+  .track { position: relative; height: 16px; border-radius: 10px; background: rgba(255,255,255,.22); margin-top: 18px; }
+  .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 10px; background: linear-gradient(90deg, #6fc3ff, #ffffff); }
+  .track b { position: absolute; top: -10px; width: 36px; height: 36px; margin-left: -18px; border-radius: 50%; background: var(--gelb); border: 4px solid #fff; box-sizing: border-box; }
+  .track .mark { position: absolute; top: -8px; bottom: -8px; width: 4px; margin-left: -2px; background: #fff; border-radius: 2px; }
+  .status { position: absolute; left: 40px; right: 40px; top: 256px; text-align: center; }
+  .pill { display: inline-flex; align-items: center; gap: 16px; padding: 12px 30px; border-radius: 50px; font-size: 36px; font-weight: 900; }
+  .uhr { width: 46px; height: 46px; border-radius: 50%; border: 5px solid currentColor; position: relative; box-sizing: border-box; }
+  .uhr::before { content: ''; position: absolute; left: 50%; top: -11px; width: 10px; height: 8px; margin-left: -5px; background: currentColor; border-radius: 3px; }
+  .uhr i { position: absolute; left: 50%; top: 50%; width: 4px; height: 16px; margin-left: -2px; background: currentColor; transform-origin: 50% 0; border-radius: 2px; }
+
+  /* Untertitel */
+  #cap { position: absolute; left: 50px; right: 50px; top: 1718px; height: 170px; }
+  .capbox { position: absolute; inset: 0; border-radius: 30px; padding: 22px 30px 18px;
+    background: rgba(8,26,70,.86); border: 3px solid rgba(255,255,255,.3); box-shadow: 0 16px 40px rgba(0,0,0,.35); }
+  .who { display: inline-block; font-size: 23px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; padding: 3px 14px; border-radius: 10px; margin-bottom: 8px; color: #101522; }
+  .capbox .txt { font-size: 40px; font-weight: 800; line-height: 1.18; }
+  .capbox.laut .txt { font-size: 44px; font-weight: 900; color: var(--niklas); letter-spacing: .01em; }
+
+  /* Rufblase über Niklas */
+  .ruf { position: absolute; transform: translate(-50%, -100%); padding: 14px 26px; border-radius: 30px; background: #fff; color: #0b3f9e;
+    font-size: 48px; font-weight: 900; white-space: nowrap; box-shadow: 0 10px 26px rgba(0,0,0,.3); }
+  .ruf::after { content: ''; position: absolute; left: 50%; bottom: -22px; margin-left: -14px; border: 14px solid transparent; border-top: 18px solid #fff; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1080" height="1920"></canvas>
+  <div id="ui"></div>
+  <div id="cap"></div>
+</div>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
